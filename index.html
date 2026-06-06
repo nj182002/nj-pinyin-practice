@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HSK Pinyin Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f0e8;
+    --surface: #fffdf8;
+    --surface2: #f0ebe0;
+    --ink: #1a1208;
+    --ink2: #5a4e38;
+    --ink3: #8a7d65;
+    --accent: #c94a1a;
+    --accent-light: #fae8e0;
+    --gold: #b8860b;
+    --gold-light: #fdf6dc;
+    --green: #2d6a2d;
+    --green-light: #e6f4e6;
+    --red: #c0392b;
+    --red-light: #fdecea;
+    --border: #d4c9b0;
+    --radius: 10px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 4rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  header h1 {
+    font-family: 'Noto Serif', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+
+  header p {
+    color: var(--ink3);
+    font-size: 0.9rem;
+    margin-top: 0.35rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    width: 100%;
+    max-width: 560px;
+  }
+
+  /* --- WELCOME SCREEN --- */
+  #screen-welcome .tagline {
+    font-size: 1rem;
+    color: var(--ink2);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  #screen-welcome .meta {
+    font-size: 0.85rem;
+    color: var(--ink3);
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 0.6rem 0.9rem;
+    margin-bottom: 1.8rem;
+  }
+
+  /* --- QUIZ SCREEN --- */
+  .progress-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.6rem;
+  }
+
+  .progress-bar-track {
+    flex: 1;
+    height: 5px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-label {
+    font-size: 0.8rem;
+    color: var(--ink3);
+    white-space: nowrap;
+  }
+
+  .score-live {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--green);
+    white-space: nowrap;
+  }
+
+  .question-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink3);
+    margin-bottom: 0.5rem;
+  }
+
+  .question-text {
+    font-family: 'Noto Serif', serif;
+    font-size: 1.5rem;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+
+  .question-hint {
+    font-size: 0.8rem;
+    color: var(--ink3);
+    margin-bottom: 1.5rem;
+    font-style: italic;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 0.75rem;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    padding: 0.65rem 0.9rem;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--accent);
+  }
+
+  input[type="text"].correct {
+    border-color: var(--green);
+    background: var(--green-light);
+    color: var(--green);
+  }
+
+  input[type="text"].wrong {
+    border-color: var(--red);
+    background: var(--red-light);
+    color: var(--red);
+  }
+
+  .feedback-msg {
+    font-size: 0.85rem;
+    min-height: 1.3em;
+    margin-bottom: 1rem;
+    font-weight: 500;
+  }
+
+  .feedback-msg.correct { color: var(--green); }
+  .feedback-msg.wrong { color: var(--red); }
+
+  /* --- BUTTONS --- */
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.65rem 1.4rem;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    width: 100%;
+  }
+
+  .btn-primary:hover { opacity: 0.88; }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--ink2);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover { background: var(--border); }
+
+  .btn-sm {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+  }
+
+  /* --- RESULTS SCREEN --- */
+  .score-display {
+    text-align: center;
+    padding: 1.5rem 0 1.8rem;
+  }
+
+  .score-number {
+    font-family: 'Noto Serif', serif;
+    font-size: 4rem;
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .score-denom {
+    font-size: 1.3rem;
+    color: var(--ink3);
+    font-family: 'Noto Serif', serif;
+  }
+
+  .score-label {
+    font-size: 0.9rem;
+    color: var(--ink2);
+    margin-top: 0.5rem;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.2rem 0;
+  }
+
+  .review-heading {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink3);
+    margin-bottom: 0.9rem;
+  }
+
+  .review-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 0.7rem 0.9rem;
+    background: var(--red-light);
+    border: 1px solid #f5c6c2;
+    border-radius: 8px;
+    margin-bottom: 0.6rem;
+  }
+
+  .review-item .ri-meaning {
+    font-size: 0.8rem;
+    color: var(--ink3);
+    font-style: italic;
+  }
+
+  .review-item .ri-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+  }
+
+  .ri-yours {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--red);
+    text-decoration: line-through;
+    font-size: 0.85rem;
+  }
+
+  .ri-arrow { color: var(--ink3); font-size: 0.85rem; }
+
+  .ri-correct {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--green);
+    font-weight: 500;
+  }
+
+  .all-correct-msg {
+    text-align: center;
+    color: var(--green);
+    font-weight: 500;
+    padding: 1rem 0;
+    font-size: 0.95rem;
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 1.5rem;
+  }
+
+  .result-actions .btn-primary { flex: 1; }
+
+  .hidden { display: none !important; }
+
+  /* tone key */
+  .tone-key {
+    background: var(--gold-light);
+    border: 1px solid #e6d080;
+    border-radius: 8px;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.78rem;
+    color: var(--gold);
+    margin-bottom: 1.4rem;
+    line-height: 1.6;
+  }
+
+  .tone-key strong { color: var(--ink2); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>HSK Pinyin Quiz</h1>
+  <p>Type the correct pinyin with tone number</p>
+</header>
+
+<!-- WELCOME SCREEN -->
+<div class="card" id="screen-welcome">
+  <p class="tagline">You'll be shown 10 random English meanings. Type the exact pinyin — including the tone number — to score points.</p>
+
+  <div class="tone-key">
+    <strong>Tone numbers:</strong> 1 = flat (mā), 2 = rising (má), 3 = dip (mǎ), 4 = falling (mà), 5 = neutral (ma)<br>
+    Example: <code>hao3</code> for 好, <code>ni3 hao3</code> for 你好
+  </div>
+
+  <div class="meta" id="dict-size-msg">Loading dictionary…</div>
+
+  <button class="btn btn-primary" onclick="startQuiz()">Start Quiz →</button>
+</div>
+
+<!-- QUIZ SCREEN -->
+<div class="card hidden" id="screen-quiz">
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <span class="progress-label" id="progress-label">1 / 10</span>
+    <span class="score-live" id="score-live">✓ 0</span>
+  </div>
+
+  <div class="question-label">What is the pinyin for…</div>
+  <div class="question-text" id="question-text">—</div>
+  <div class="question-hint" id="question-hint"></div>
+
+  <div class="input-row">
+    <input type="text" id="answer-input" placeholder="e.g. hao3" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+    <button class="btn btn-secondary btn-sm" onclick="skipQuestion()">Skip</button>
+  </div>
+
+  <div class="feedback-msg" id="feedback-msg"></div>
+
+  <button class="btn btn-primary" id="submit-btn" onclick="submitAnswer()">Check Answer</button>
+</div>
+
+<!-- RESULTS SCREEN -->
+<div class="card hidden" id="screen-results">
+  <div class="score-display">
+    <div>
+      <span class="score-number" id="final-score">0</span>
+      <span class="score-denom">&thinsp;/ 10</span>
+    </div>
+    <div class="score-label" id="score-label">—</div>
+  </div>
+
+  <hr class="divider">
+
+  <div id="review-section">
+    <div class="review-heading">Missed answers</div>
+    <div id="review-list"></div>
+  </div>
+
+  <div class="result-actions">
+    <button class="btn btn-primary" onclick="startQuiz()">Play again →</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  DICTIONARY
+//  Format: "pinyin_with_tone_numbers": "English meaning"
+//  Tone number goes at the END of each syllable: hao3, ni3 hao3
+//  For multi-syllable words: "ni3 hao3" (space-separated syllables)
+//  To ADD words: just add a new line inside DICTIONARY = { ... }
+// ============================================================
+const DICTIONARY = {
+  // Greetings & basics
+  "ni3 hao3":       "hello / how are you",
+  "zai4 jian4":     "goodbye",
+  "xie4 xie5":      "thank you",
+  "bu4 ke4 qi4":    "you're welcome",
+  "dui4 bu4 qi3":   "sorry / excuse me",
+  "mei2 guan1 xi5": "never mind / it's okay",
+  "hao3":           "good",
+  "bu4 hao3":       "not good / bad",
+
+  // Numbers
+  "yi1":  "one",
+  "er4":  "two",
+  "san1": "three",
+  "si4":  "four",
+  "wu3":  "five",
+  "liu4": "six",
+  "qi1":  "seven",
+  "ba1":  "eight",
+  "jiu3": "nine",
+  "shi2": "ten",
+
+  // People & pronouns
+  "wo3":      "I / me",
+  "ni3":      "you",
+  "ta1":      "he / she / it",
+  "wo3 men5": "we / us",
+  "ni3 men5": "you (plural)",
+  "ta1 men5": "they / them",
+  "ren2":     "person / people",
+  "peng2 you5": "friend",
+  "lao3 shi1":  "teacher",
+  "xue2 sheng5":"student",
+
+  // Family
+  "ba4 ba5":  "father / dad",
+  "ma1 ma5":  "mother / mom",
+  "ge1 ge5":  "older brother",
+  "jie3 jie5":"older sister",
+  "di4 di5":  "younger brother",
+  "mei4 mei5":"younger sister",
+
+  // Time
+  "jin1 tian1":   "today",
+  "ming2 tian1":  "tomorrow",
+  "zuo2 tian1":   "yesterday",
+  "xian4 zai4":   "now",
+  "yi3 qian2":    "before / in the past",
+  "yi3 hou4":     "after / in the future",
+  "shang4 wu3":   "morning (a.m.)",
+  "xia4 wu3":     "afternoon (p.m.)",
+  "wan3 shang5":  "evening / night",
+
+  // Common verbs
+  "shi4":         "to be (is/am/are)",
+  "you3":         "to have",
+  "qu4":          "to go",
+  "lai2":         "to come",
+  "kan4":         "to look / to watch",
+  "chi1":         "to eat",
+  "he1":          "to drink",
+  "shuo1":        "to speak / to say",
+  "ting1":        "to listen",
+  "xie3":         "to write",
+  "du2":          "to read",
+  "xue2":         "to study / to learn",
+  "gong1 zuo4":   "to work / work",
+  "xiu1 xi5":     "to rest",
+  "shui4 jiao4":  "to sleep",
+  "mai3":         "to buy",
+  "mai4":         "to sell",
+  "yong4":        "to use",
+  "zuo4":         "to do / to make",
+  "kai1":         "to open",
+  "guan1":        "to close",
+
+  // Adjectives
+  "da4":          "big / large",
+  "xiao3":        "small / little",
+  "duo1":         "many / much",
+  "shao3":        "few / little",
+  "kuai4":        "fast / quick",
+  "man4":         "slow",
+  "gui4":         "expensive",
+  "pian2 yi5":    "cheap / inexpensive",
+  "re4":          "hot",
+  "leng3":        "cold",
+  "gao1":         "tall / high",
+  "ai3":          "short (height)",
+  "chang2":       "long",
+  "duan3":        "short (length)",
+  "mei3 li4":     "beautiful",
+  "nan2 kan4":    "ugly",
+  "hao3 chi1":    "delicious / tasty",
+  "nan2 chi1":    "bad-tasting",
+  "lei4":         "tired",
+  "mang2":        "busy",
+  "kong4":        "free / unoccupied",
+  "gao1 xing4":   "happy",
+  "nan2 guo4":    "sad",
+
+  // Places
+  "zhong1 guo2":  "China",
+  "bei3 jing1":   "Beijing",
+  "shang4 hai3":  "Shanghai",
+  "xue2 xiao4":   "school",
+  "jia1":         "home / family",
+  "gong1 si1":    "company",
+  "shang1 dian4": "shop / store",
+  "yi1 yuan4":    "hospital",
+  "yin2 hang2":   "bank",
+  "ji1 chang3":   "airport",
+  "huo3 che1 zhan4": "train station",
+
+  // Food & drink
+  "mi3 fan4":     "rice",
+  "mian4 tiao2":  "noodles",
+  "man2 tou5":    "steamed bun",
+  "rou4":         "meat",
+  "ji1 rou4":     "chicken",
+  "zhu1 rou4":    "pork",
+  "yu2":          "fish",
+  "shu4 cai4":    "vegetables",
+  "shui3 guo3":   "fruit",
+  "shui3":        "water",
+  "cha2":         "tea",
+  "ka1 fei1":     "coffee",
+  "niu2 nai3":    "milk",
+
+  // Question words
+  "shen2 me5":    "what",
+  "shui2":        "who",
+  "na3":          "which",
+  "na3 li3":      "where",
+  "shen2 me5 shi2 hou4": "when",
+  "wei4 shen2 me5": "why",
+  "zen3 me5":     "how",
+  "duo1 shao3":   "how many / how much",
+  "ji3":          "how many (small number)",
+};
+// ============================================================
+// END DICTIONARY — add your words above this line
+// ============================================================
+
+let questions = [];
+let current = 0;
+let score = 0;
+let results = [];
+let answered = false;
+
+function normalize(str) {
+  return str.replace(/\s+/g, '').toLowerCase().trim();
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function show(id) {
+  ['screen-welcome','screen-quiz','screen-results'].forEach(s => {
+    document.getElementById(s).classList.toggle('hidden', s !== id);
+  });
+}
+
+function startQuiz() {
+  const keys = Object.keys(DICTIONARY);
+  questions = shuffle(keys).slice(0, Math.min(10, keys.length));
+  current = 0;
+  score = 0;
+  results = [];
+  answered = false;
+  show('screen-quiz');
+  loadQuestion();
+}
+
+function loadQuestion() {
+  answered = false;
+  const pinyin = questions[current];
+  const meaning = DICTIONARY[pinyin];
+
+  document.getElementById('question-text').textContent = meaning;
+  document.getElementById('question-hint').textContent =
+    `Syllables in answer: ${pinyin.split(' ').length}`;
+  document.getElementById('progress-label').textContent = `${current + 1} / ${questions.length}`;
+  document.getElementById('progress-fill').style.width = `${(current / questions.length) * 100}%`;
+  document.getElementById('score-live').textContent = `✓ ${score}`;
+
+  const input = document.getElementById('answer-input');
+  input.value = '';
+  input.className = '';
+  input.disabled = false;
+  input.focus();
+
+  document.getElementById('feedback-msg').textContent = '';
+  document.getElementById('feedback-msg').className = 'feedback-msg';
+  document.getElementById('submit-btn').textContent = 'Check Answer';
+  document.getElementById('submit-btn').onclick = submitAnswer;
+}
+
+function submitAnswer() {
+  if (answered) { nextQuestion(); return; }
+
+  const input = document.getElementById('answer-input');
+  const userRaw = input.value;
+  const user = normalize(userRaw);
+  const pinyin = questions[current];
+  const correct = normalize(pinyin);
+
+  const fb = document.getElementById('feedback-msg');
+
+  if (!user) return;
+
+  answered = true;
+  input.disabled = true;
+
+  const isCorrect = user === correct;
+
+  if (isCorrect) {
+    score++;
+    input.classList.add('correct');
+    fb.textContent = '✓ Correct!';
+    fb.className = 'feedback-msg correct';
+  } else {
+    input.classList.add('wrong');
+    fb.textContent = `✗ Answer: ${pinyin}`;
+    fb.className = 'feedback-msg wrong';
+    results.push({
+      meaning: DICTIONARY[pinyin],
+      yours: userRaw.trim() || '(skipped)',
+      correct: pinyin,
+    });
+  }
+
+  document.getElementById('score-live').textContent = `✓ ${score}`;
+  document.getElementById('submit-btn').textContent =
+    current < questions.length - 1 ? 'Next →' : 'See Results →';
+  document.getElementById('submit-btn').onclick = nextQuestion;
+}
+
+function skipQuestion() {
+  if (answered) return;
+  const pinyin = questions[current];
+  results.push({
+    meaning: DICTIONARY[pinyin],
+    yours: '(skipped)',
+    correct: pinyin,
+  });
+  const fb = document.getElementById('feedback-msg');
+  fb.textContent = `Answer: ${pinyin}`;
+  fb.className = 'feedback-msg wrong';
+  answered = true;
+  document.getElementById('answer-input').disabled = true;
+  document.getElementById('submit-btn').textContent =
+    current < questions.length - 1 ? 'Next →' : 'See Results →';
+  document.getElementById('submit-btn').onclick = nextQuestion;
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= questions.length) {
+    showResults();
+  } else {
+    loadQuestion();
+  }
+}
+
+function showResults() {
+  document.getElementById('progress-fill').style.width = '100%';
+  show('screen-results');
+
+  const total = questions.length;
+  document.getElementById('final-score').textContent = score;
+
+  const pct = score / total;
+  let label = '';
+  if (pct === 1) label = 'Perfect score! 完美！';
+  else if (pct >= 0.8) label = 'Great job! 做得很好！';
+  else if (pct >= 0.6) label = 'Good effort! Keep practicing.';
+  else if (pct >= 0.4) label = 'Keep going — practice makes perfect!';
+  else label = 'Don\'t give up! Review and try again.';
+  document.getElementById('score-label').textContent = label;
+
+  const list = document.getElementById('review-list');
+  list.innerHTML = '';
+
+  if (results.length === 0) {
+    list.innerHTML = '<div class="all-correct-msg">🎉 You got everything right!</div>';
+  } else {
+    results.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'review-item';
+      item.innerHTML = `
+        <div class="ri-meaning">${r.meaning}</div>
+        <div class="ri-row">
+          <span class="ri-yours">${r.yours}</span>
+          <span class="ri-arrow">→</span>
+          <span class="ri-correct">${r.correct}</span>
+        </div>`;
+      list.appendChild(item);
+    });
+  }
+}
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !document.getElementById('screen-quiz').classList.contains('hidden')) {
+    if (answered) nextQuestion();
+    else submitAnswer();
+  }
+});
+
+// Init: show dictionary size
+window.addEventListener('DOMContentLoaded', () => {
+  const count = Object.keys(DICTIONARY).length;
+  document.getElementById('dict-size-msg').textContent =
+    `Dictionary has ${count} word${count !== 1 ? 's' : ''}`;
+});
+</script>
+</body>
+</html>
